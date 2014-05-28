@@ -1,0 +1,23 @@
+{
+  "author": "Stanislas Duprey",
+  "name": "roulette",
+  "description": "Preview and crop a picture before upload",
+  "homepage": "http://github.com/standup75/roulette",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/standup75/roulette.git"
+  },
+  "main": "./dist/roulette.js",
+  "version": "0.1.0",
+  "dependencies": {
+    "angular": "~1.3.0",
+    "angular-sanitize": "~1.3.0",
+    "angular-touch": "~1.3.0",
+    "angular-route": "~1.3.0",
+    "angular-superswipe": "git://github.com/standup75/superswipe.git"
+  },
+  "devDependencies": {
+    "angular-mocks": "~1.3.0",
+    "angular-scenario": "~1.3.0"
+  }
+}
