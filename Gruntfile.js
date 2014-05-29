@@ -12,8 +12,9 @@ module.exports = function (grunt) {
   var yeomanConfig = {
     app: 'src',
     demo: 'demo',
+    web: 'web',
     name: 'roulette',
-    dist: 'dist',
+    dist: 'dist'
   };
 
   try {
@@ -30,10 +31,6 @@ module.exports = function (grunt) {
       coffeeDemo: {
         files: ['<%= yeoman.demo %>/scripts/{,*/}*.coffee'],
         tasks: ['coffee:demo']
-      },
-      coffeeTest: {
-        files: ['test/spec/{,*/}*.coffee'],
-        tasks: ['coffee:test']
       },
       compass: {
         files: ['styles/{,*/}*.{scss,sass}'],
@@ -67,16 +64,6 @@ module.exports = function (grunt) {
             ];
           }
         }
-      },
-      test: {
-        options: {
-          middleware: function (connect) {
-            return [
-              mountFolder(connect, '.tmp'),
-              mountFolder(connect, 'test')
-            ];
-          }
-        }
       }
     },
     open: {
@@ -95,6 +82,7 @@ module.exports = function (grunt) {
           ]
         }]
       },
+      web: '<%= yeoman.web %>',
       server: '.tmp'
     },
     karma: {
@@ -119,15 +107,6 @@ module.exports = function (grunt) {
           cwd: '<%= yeoman.demo %>/scripts',
           src: '{,*/}*.coffee',
           dest: '.tmp/demo/scripts',
-          ext: '.js'
-        }]
-      },
-      test: {
-        files: [{
-          expand: true,
-          cwd: 'test/spec',
-          src: '{,*/}*.coffee',
-          dest: '.tmp/spec',
           ext: '.js'
         }]
       }
@@ -169,6 +148,24 @@ module.exports = function (grunt) {
           dest: '',
           src: [ '*.css' ]
         }]
+      },
+      web: {
+        files: [{
+          expand: true,
+          cwd: '<%= yeoman.dist %>',
+          dest: '<%= yeoman.web %>',
+          src: [ '*.js' ]
+        }, {
+          expand: true,
+          cwd: '.tmp',
+          dest: '<%= yeoman.web %>',
+          src: [ '**/*.{js,css}' ]
+        }, {
+          expand: true,
+          cwd: '<%= yeoman.demo %>',
+          dest: '<%= yeoman.web %>',
+          src: [ '**/*.{js,html,css,png,gif,jpeg,jpg,bmp}' ]
+        }]
       }
     }
   });
@@ -187,23 +184,12 @@ module.exports = function (grunt) {
     'watch'
   ]);
 
-  grunt.registerTask('test', [
-    'clean:server',
-    'coffee:dist',
-    'coffee:test',
-    'concat',
-    'copy',
-    'connect:test',
-    'karma'
-  ]);
-
   grunt.registerTask('build', [
-    'clean:dist',
+    'clean',
     'coffee',
     'compass:dist',
     'concat',
-    'copy',
-    'test'
+    'copy'
   ]);
 
   grunt.registerTask('default', ['build']);

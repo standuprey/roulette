@@ -1,4 +1,4 @@
-roulette Angular Module
+Roulette Angular Module
 ========================
 
 Implement a wheel menu for mobile devices with this angular directive
@@ -51,27 +51,31 @@ Options
 - `snap`: false | true. When turning the wheel, set this to true (default) if you want the wheel to snap to the nearest section
 - `iconsRatio`: How much smaller should be the icon displayed compared to their actual size. Defaults to 0.5 (good for retina displays)
 
-Events broadcast
----------------
+Events
+------
 
 2 events are broadcasted on the $rootScope:
 - `roulette:turned`: When you have turned the wheel. Sends the section on top
 - `roulette:select`: When you have clicked (or touched) a section of the wheel (without turning it). Sends the selected section
 
-Both events are broadcast with label, color, labelColor, and icon url of the section
+Both events are broadcasted with label, color, labelColor, and icon url of the section
 
 		label: "Section 1"
 		color: "#555500"
 		labelColor: "#ffffff"
 		icon: "/images/cog.png"
 
-So, you can listen to this event like this:
+So, you can listen to these events like this:
 
-		$scope.$on("roulette:turned", function(e, info){ console.log("Event: roulette:turned - Params: " + JSON.stringify info); });
-		$scope.$on("roulette:select", function(e, info){ console.log("Event: roulette:turned - Params: " + JSON.stringify info); });
+		$scope.$on("roulette:turned", function(e, info){ console.log("Event: roulette:turned - Params: " + JSON.stringify(info)); });
+		$scope.$on("roulette:select", function(e, info){ console.log("Event: roulette:turned - Params: " + JSON.stringify(info)); });
 
 Demo
 ----
+
+Live demo:
+
+http://standupweb.net/demo/angular/roulette
 
 Try the (very simple) demo. How to run the demo? Simple...
 

@@ -1,11 +1,5 @@
-@media -sass-debug-info{filename{font-family:file\:\/\/\/Users\/standup75\/Code\/roulette\/styles\/roulette\.scss}line{font-family:\000033}}
-body {
-  background-color: #eee;
-}
-
-@media -sass-debug-info{filename{font-family:file\:\/\/\/Users\/standup75\/Code\/roulette\/styles\/roulette\.scss}line{font-family:\000034}}
+/* line 3, ../../styles/roulette.scss */
 roulette {
   display: block;
-  width: 640px;
-  margin: 50px;
+  width: 320px;
 }

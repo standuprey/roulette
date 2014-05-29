@@ -217,21 +217,22 @@
         wheelCtx.arc(radius, radius, radius - thickness, 0, Math.PI * 2, true);
         wheelCtx.fill();
         drawLabelsAndIcons = function() {
-          var img, label, labelSize, _j, _len1, _ref3, _ref4, _ref5;
+          var img, label, labelMargin, labelSize, _j, _len1, _ref3, _ref4, _ref5;
           wheelCtx.save();
           wheelCtx.translate(radius, radius);
           console.log(radius, radius);
           wheelCtx.font = "" + fontSize + "px " + fontFamily;
+          labelMargin = thickness * 0.2;
           _ref3 = scope.labelColors;
           for (i = _j = 0, _len1 = _ref3.length; _j < _len1; i = ++_j) {
             color = _ref3[i];
             wheelCtx.fillStyle = color;
             label = scope.labels[i];
             labelSize = wheelCtx.measureText(label);
-            wheelCtx.fillText(label, -labelSize.width / 2, thickness - radius - 30);
+            wheelCtx.fillText(label, -labelSize.width / 2, thickness - radius - labelMargin);
             if ((_ref4 = scope.labelIcons) != null ? _ref4[i] : void 0) {
               img = imageLoader.images[(_ref5 = scope.labelIcons) != null ? _ref5[i] : void 0];
-              wheelCtx.drawImage(img, 0, 0, img.width, img.height, Math.round(-img.width * iconsRatio / 2), -radius + (thickness - img.height * iconsRatio - fontSize - 30) / 2, img.width * iconsRatio, img.height * iconsRatio);
+              wheelCtx.drawImage(img, 0, 0, img.width, img.height, Math.round(-img.width * iconsRatio / 2), -radius + (thickness - img.height * iconsRatio - fontSize - labelMargin) / 2, img.width * iconsRatio, img.height * iconsRatio);
             }
             wheelCtx.rotate(sectionSpread);
           }
@@ -317,7 +318,7 @@
               sectionAngle = diff(x1y0, dest);
               destAngle = getDestAngle(section);
               section = parseInt(makeAnglePositif(sectionAngle + 2 * sectionSpread - destAngle) / sectionSpread, 10);
-              eventName = "roulette:click";
+              eventName = "roulette:select";
             }
             return $rootScope.$broadcast(eventName, {
               index: section,
