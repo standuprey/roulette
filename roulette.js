@@ -1,7 +1,62 @@
 (function() {
-  var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+  var app;
 
-  angular.module("roulette", ["ngTouch", "superswipe"]).directive("roulette", function($window, $document, $swipe, $rootScope) {
+  app = angular.module("roulette", ["ngTouch", "superswipe"]);
+
+  app.service("imageLoader", function($window, $document, $swipe, $rootScope) {
+    var count, getProgressPercent, sources, totalCount;
+    sources = [];
+    count = 0;
+    totalCount = 0;
+    getProgressPercent = function() {
+      return 100 - Math.round((count * 100) / totalCount);
+    };
+    return {
+      images: {},
+      done: function(success) {
+        this.loaded = true;
+        return typeof success === "function" ? success() : void 0;
+      },
+      load: function(success, progress) {
+        var image, source, _i, _len, _results,
+          _this = this;
+        totalCount = count;
+        if (count === 0) {
+          this.done(success);
+        }
+        _results = [];
+        for (_i = 0, _len = sources.length; _i < _len; _i++) {
+          source = sources[_i];
+          image = new Image;
+          image.onload = function() {
+            count--;
+            if (count === 0) {
+              _this.done(success);
+            }
+            return typeof progress === "function" ? progress(getProgressPercent()) : void 0;
+          };
+          image.onerror = function() {
+            return count--;
+          };
+          _results.push(image.src = source);
+        }
+        return _results;
+      },
+      add: function(source) {
+        var image;
+        this.loaded = false;
+        sources.push(source);
+        count++;
+        image = new Image;
+        image.src = source;
+        this.images[source] = image;
+        return image;
+      },
+      loaded: false
+    };
+  });
+
+  app.directive("roulette", function($window, $document, $swipe, $rootScope, imageLoader) {
     var diff, getAngle, initCanvas, makeAnglePositif, negFactor, offset, rotateWheel;
     $window.requestAnimFrame = (function() {
       return $window.requestAnimationFrame || $window.webkitRequestAnimationFrame || $window.mozRequestAnimationFrame || $window.oRequestAnimationFrame || $window.msRequestAnimationFrame || function(callback) {
@@ -82,10 +137,17 @@
         fontSize: "@?",
         fontFamily: "@?",
         colors: "=?",
+        iconsRatio: "@?",
         snap: "=?"
       },
       link: function(scope, element, attributes) {
-        var angle, canvas, canvasSide, color, ctx, elOffset, i, label, labelSize, origin, radius, sectionCount, sectionSpread, selectSection, snap, startAngle, thickness, wheelCanvas, wheelCtx, _i, _j, _len, _len1, _ref, _ref1, _ref2, _ref3;
+        var angle, canvas, canvasSide, centerColor, color, ctx, drawLabelsAndIcons, elOffset, fontFamily, fontSize, getDestAngle, i, iconsRatio, imageUrl, origin, radius, sectionCount, sectionSpread, snap, startAngle, thickness, wheelCanvas, wheelCtx, _i, _j, _len, _len1, _ref, _ref1, _ref2, _ref3;
+        angle = 0;
+        origin = null;
+        fontSize = scope.fontSize || 12;
+        centerColor = scope.centerColor || "#ffffff";
+        fontFamily = scope.fontFamily || "helvetica";
+        iconsRatio = scope.iconsRatio || 0.5;
         sectionCount = scope.labels.length;
         if (!(sectionCount > 1)) {
           throw "roulette directive: scope.labels, please specify at least 2 labels";
@@ -99,9 +161,6 @@
         if (scope.labelIcons && scope.labelIcons.length !== sectionCount) {
           throw "roulette directive: scope.labelIcons, please give as many labelIcons as labels: expected " + sectionCount + ", found " + scope.labelIcons.length;
         }
-        scope.centerColor || (scope.centerColor = "#ffffff");
-        scope.fontSize || (scope.fontSize = 18);
-        scope.fontFamily || (scope.fontFamily = "helvetica");
         if (scope.snap == null) {
           scope.snap = true;
         }
@@ -151,36 +210,61 @@
           wheelCtx.arc(radius, radius, radius, sectionSpread * i + startAngle, sectionSpread * (i + 1) + startAngle, false);
           wheelCtx.fill();
         }
-        wheelCtx.fillStyle = scope.centerColor;
+        wheelCtx.fillStyle = centerColor;
         wheelCtx.beginPath();
         wheelCtx.moveTo(0, 0);
         wheelCtx.moveTo(radius, radius);
         wheelCtx.arc(radius, radius, radius - thickness, 0, Math.PI * 2, true);
         wheelCtx.fill();
-        wheelCtx.save();
-        wheelCtx.translate(radius, radius);
-        wheelCtx.font = "" + scope.fontSize + "px " + scope.fontFamily;
-        _ref3 = scope.labelColors;
-        for (i = _j = 0, _len1 = _ref3.length; _j < _len1; i = ++_j) {
-          color = _ref3[i];
-          wheelCtx.fillStyle = color;
-          label = scope.labels[i];
-          labelSize = wheelCtx.measureText(label);
-          wheelCtx.fillText(label, -labelSize.width / 2, thickness - radius - 30);
-          wheelCtx.rotate(sectionSpread);
+        drawLabelsAndIcons = function() {
+          var img, label, labelSize, _j, _len1, _ref3, _ref4, _ref5;
+          wheelCtx.save();
+          wheelCtx.translate(radius, radius);
+          console.log(radius, radius);
+          wheelCtx.font = "" + fontSize + "px " + fontFamily;
+          _ref3 = scope.labelColors;
+          for (i = _j = 0, _len1 = _ref3.length; _j < _len1; i = ++_j) {
+            color = _ref3[i];
+            wheelCtx.fillStyle = color;
+            label = scope.labels[i];
+            labelSize = wheelCtx.measureText(label);
+            wheelCtx.fillText(label, -labelSize.width / 2, thickness - radius - 30);
+            if ((_ref4 = scope.labelIcons) != null ? _ref4[i] : void 0) {
+              img = imageLoader.images[(_ref5 = scope.labelIcons) != null ? _ref5[i] : void 0];
+              wheelCtx.drawImage(img, 0, 0, img.width, img.height, Math.round(-img.width * iconsRatio / 2), -radius + (thickness - img.height * iconsRatio - fontSize - 30) / 2, img.width * iconsRatio, img.height * iconsRatio);
+            }
+            wheelCtx.rotate(sectionSpread);
+          }
+          wheelCtx.restore();
+          rotateWheel(ctx, wheelCanvas, 0);
+          return element.append(canvas);
+        };
+        if (scope.labelIcons != null) {
+          _ref3 = scope.labelIcons;
+          for (_j = 0, _len1 = _ref3.length; _j < _len1; _j++) {
+            imageUrl = _ref3[_j];
+            imageLoader.add(imageUrl);
+          }
+          imageLoader.load(drawLabelsAndIcons);
+        } else {
+          drawLabelsAndIcons();
         }
-        wheelCtx.restore();
-        snap = function(section) {
-          var animloop, destAngle, lastTime, progress, sign;
+        getDestAngle = function(section) {
+          var destAngle;
           destAngle = makeAnglePositif(-section * sectionSpread);
           if (destAngle === 0 && angle > Math.PI) {
             destAngle = 2 * Math.PI;
           }
+          return destAngle;
+        };
+        snap = function(section) {
+          var animloop, destAngle, lastTime, progress, sign;
+          destAngle = getDestAngle(section);
           progress = 0.05;
           sign = destAngle > angle ? 1 : -1;
           lastTime = 0;
           animloop = function() {
-            var angle, newTime, timeElapsed;
+            var newTime, timeElapsed;
             newTime = new Date().getTime();
             timeElapsed = newTime - lastTime;
             if (timeElapsed > 30) {
@@ -197,8 +281,6 @@
           };
           return animloop();
         };
-        angle = 0;
-        origin = null;
         $swipe.bind(angular.element(canvas), {
           'start': function(coords) {
             return origin = {
@@ -215,36 +297,38 @@
             return rotateWheel(ctx, wheelCanvas, angle + diff(origin, dest));
           },
           'end': function(coords) {
-            var dest, section;
+            var angleDiff, dest, destAngle, eventName, section, sectionAngle, x1y0, _ref4, _ref5;
             dest = {
               x: coords.x - (elOffset.left + radius),
               y: coords.y - (elOffset.top + radius)
             };
-            angle = makeAnglePositif(angle + diff(origin, dest));
+            angleDiff = diff(origin, dest);
+            angle = makeAnglePositif(angle + angleDiff);
             section = parseInt(makeAnglePositif(-angle + Math.PI / sectionCount) / sectionSpread, 10);
-            $rootScope.$broadcast("roulette:turned", {
+            eventName = "roulette:turned";
+            if (scope.snap) {
+              snap(section);
+            }
+            if (Math.abs(angleDiff) < sectionSpread / 4) {
+              x1y0 = {
+                x: 100,
+                y: 0
+              };
+              sectionAngle = diff(x1y0, dest);
+              destAngle = getDestAngle(section);
+              section = parseInt(makeAnglePositif(sectionAngle + 2 * sectionSpread - destAngle) / sectionSpread, 10);
+              eventName = "roulette:click";
+            }
+            return $rootScope.$broadcast(eventName, {
               index: section,
               label: scope.labels[section],
               color: scope.colors[section],
-              labelColor: scope.labelColors[section],
-              icon: scope.labelIcons[section]
+              labelColor: (_ref4 = scope.labelColors) != null ? _ref4[section] : void 0,
+              icon: (_ref5 = scope.labelIcons) != null ? _ref5[section] : void 0
             });
-            if (scope.snap) {
-              return snap(section);
-            }
           }
         });
-        selectSection = function(e) {
-          return console.log(e);
-        };
-        if (__indexOf.call($document[0].documentElement, 'ontouchstart') >= 0) {
-          canvas.addEventListener("touchstart", selectSection);
-        } else {
-          canvas.addEventListener("click", selectSection);
-        }
-        elOffset = offset(element[0]);
-        rotateWheel(ctx, wheelCanvas, 0);
-        return element.append(canvas);
+        return elOffset = offset(element[0]);
       }
     };
   });

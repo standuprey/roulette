@@ -1,4 +1,37 @@
-angular.module("roulette", ["ngTouch", "superswipe"]).directive "roulette", ($window, $document, $swipe, $rootScope) ->
+app = angular.module("roulette", ["ngTouch", "superswipe"])
+
+app.service "imageLoader", ($window, $document, $swipe, $rootScope) ->
+  sources = []
+  count = 0
+  totalCount = 0
+  getProgressPercent = -> 100 - Math.round (count * 100) / totalCount
+
+  images: {}
+  done: (success) ->
+  	@loaded = true
+  	success?()
+  load: (success, progress) ->
+    totalCount = count
+    @done(success) if count is 0
+    for source in sources
+      image = new Image
+      image.onload = =>
+        count--
+        @done(success) if count is 0
+        progress? getProgressPercent()
+      image.onerror = -> count--
+      image.src = source
+  add: (source) ->
+    @loaded = false
+    sources.push source
+    count++
+    image = new Image
+    image.src = source
+    @images[source] = image
+    image
+  loaded: false
+
+app.directive "roulette", ($window, $document, $swipe, $rootScope, imageLoader) ->
 	$window.requestAnimFrame = do ->
 		$window.requestAnimationFrame or $window.webkitRequestAnimationFrame or $window.mozRequestAnimationFrame or $window.oRequestAnimationFrame or $window.msRequestAnimationFrame or (callback) ->
 			$window.setTimeout callback, 1000 / swGame.settings.cycle
@@ -52,10 +85,15 @@ angular.module("roulette", ["ngTouch", "superswipe"]).directive "roulette", ($wi
 		fontSize: "@?"
 		fontFamily: "@?"
 		colors: "=?"
+		iconsRatio: "@?"
 		snap: "=?"
 	link: (scope, element, attributes) ->
 		angle = 0
 		origin = null
+		fontSize = scope.fontSize || 12
+		centerColor = scope.centerColor || "#ffffff"
+		fontFamily = scope.fontFamily || "helvetica"
+		iconsRatio = scope.iconsRatio || 0.5
 		sectionCount = scope.labels.length
 
 		# check params
@@ -63,9 +101,6 @@ angular.module("roulette", ["ngTouch", "superswipe"]).directive "roulette", ($wi
 		throw("roulette directive: scope.colors, please give as many colors as labels: expected #{sectionCount}, found #{scope.colors.length}") if scope.colors and scope.colors.length isnt sectionCount
 		throw("roulette directive: scope.labelColors, please give as many labelColors as labels: expected #{sectionCount}, found #{scope.labelColors.length}") if scope.labelColors and scope.labelColors.length isnt sectionCount
 		throw("roulette directive: scope.labelIcons, please give as many labelIcons as labels: expected #{sectionCount}, found #{scope.labelIcons.length}") if scope.labelIcons and scope.labelIcons.length isnt sectionCount
-		scope.centerColor ||= "#ffffff"
-		scope.fontSize ||= 18
-		scope.fontFamily ||= "helvetica"
 		scope.snap = true unless scope.snap?
 
 		# default colors
@@ -105,24 +140,44 @@ angular.module("roulette", ["ngTouch", "superswipe"]).directive "roulette", ($wi
 			wheelCtx.fill()
 
 		# draw center
-		wheelCtx.fillStyle = scope.centerColor
+		wheelCtx.fillStyle = centerColor
 		wheelCtx.beginPath()
 		wheelCtx.moveTo 0, 0
 		wheelCtx.moveTo radius, radius
 		wheelCtx.arc radius, radius, radius - thickness, 0, Math.PI * 2, true
 		wheelCtx.fill()
 
-		# draw labels
-		wheelCtx.save()
-		wheelCtx.translate radius, radius
-		wheelCtx.font = "#{scope.fontSize}px #{scope.fontFamily}"
-		for color, i in scope.labelColors
-			wheelCtx.fillStyle = color
-			label = scope.labels[i]
-			labelSize = wheelCtx.measureText label
-			wheelCtx.fillText label, -labelSize.width / 2, thickness - radius - 30
-			wheelCtx.rotate sectionSpread
-		wheelCtx.restore()
+		# draw labels and icons
+		drawLabelsAndIcons = ->
+			wheelCtx.save()
+			wheelCtx.translate radius, radius
+			console.log radius, radius
+			wheelCtx.font = "#{fontSize}px #{fontFamily}"
+			labelMargin = thickness * 0.2
+			for color, i in scope.labelColors
+				wheelCtx.fillStyle = color
+				label = scope.labels[i]
+				labelSize = wheelCtx.measureText label
+				wheelCtx.fillText label, -labelSize.width / 2, thickness - radius - labelMargin
+				if scope.labelIcons?[i]
+					img = imageLoader.images[scope.labelIcons?[i]]
+					wheelCtx.drawImage img,
+						0,
+						0,
+						img.width,
+						img.height,
+						Math.round(-img.width * iconsRatio / 2),
+						-radius + (thickness - img.height * iconsRatio - fontSize - labelMargin) / 2,
+						img.width * iconsRatio, img.height * iconsRatio
+				wheelCtx.rotate sectionSpread
+			wheelCtx.restore()
+			rotateWheel ctx, wheelCanvas, 0
+			element.append canvas
+		if scope.labelIcons?
+			imageLoader.add(imageUrl) for imageUrl in scope.labelIcons
+			imageLoader.load drawLabelsAndIcons
+		else
+			drawLabelsAndIcons()
 
 		# snap to a section
 		getDestAngle = (section) ->
@@ -177,16 +232,14 @@ angular.module("roulette", ["ngTouch", "superswipe"]).directive "roulette", ($wi
 					sectionAngle = diff(x1y0, dest)
 					destAngle = getDestAngle section
 					section = parseInt(makeAnglePositif(sectionAngle + 2 * sectionSpread - destAngle) / sectionSpread, 10)
-					eventName = "roulette:click"
+					eventName = "roulette:select"
 				$rootScope.$broadcast eventName,
 					index: section
 					label: scope.labels[section]
 					color: scope.colors[section]
-					labelColor: scope.labelColors[section]
-					icon: scope.labelIcons[section]
+					labelColor: scope.labelColors?[section]
+					icon: scope.labelIcons?[section]
 				
 
 
 		elOffset = offset element[0]
-		rotateWheel ctx, wheelCanvas, 0
-		element.append canvas
