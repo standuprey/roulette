@@ -141,7 +141,8 @@
         snap: "=?"
       },
       link: function(scope, element, attributes) {
-        var angle, canvas, canvasSide, centerColor, color, ctx, drawLabelsAndIcons, elOffset, fontFamily, fontSize, getDestAngle, i, iconsRatio, imageUrl, origin, radius, sectionCount, sectionSpread, snap, startAngle, thickness, wheelCanvas, wheelCtx, _i, _j, _len, _len1, _ref, _ref1, _ref2, _ref3;
+        var angle, canvas, canvasSide, centerColor, color, ctx, drawLabelsAndIcons, elOffset, fontFamily, fontSize, getDestAngle, i, iconsRatio, imageUrl, isGrabbed, origin, radius, sectionCount, sectionSpread, snap, startAngle, thickness, wheelCanvas, wheelCtx, _i, _j, _len, _len1, _ref, _ref1, _ref2, _ref3;
+        isGrabbed = false;
         angle = 0;
         origin = null;
         fontSize = scope.fontSize || 12;
@@ -260,13 +261,16 @@
         };
         snap = function(section) {
           var animloop, destAngle, lastTime, progress, sign;
+          angle = makeAnglePositif(angle);
           destAngle = getDestAngle(section);
-          progress = 0.05;
+          progress = 0.1;
           sign = destAngle > angle ? 1 : -1;
           lastTime = 0;
-          console.log(180 * angle / Math.PI, 180 * destAngle / Math.PI);
           animloop = function() {
             var newTime, timeElapsed;
+            if (isGrabbed) {
+              return;
+            }
             newTime = new Date().getTime();
             timeElapsed = newTime - lastTime;
             if (timeElapsed > 30) {
@@ -285,6 +289,7 @@
         };
         $swipe.bind(angular.element(canvas), {
           'start': function(coords) {
+            isGrabbed = true;
             return origin = {
               x: coords.x - (elOffset.left + radius),
               y: coords.y - (elOffset.top + radius)
@@ -300,6 +305,7 @@
           },
           'end': function(coords) {
             var angleDiff, dest, destAngle, eventName, section, sectionAngle, x1y0, _ref4, _ref5;
+            isGrabbed = false;
             dest = {
               x: coords.x - (elOffset.left + radius),
               y: coords.y - (elOffset.top + radius)
