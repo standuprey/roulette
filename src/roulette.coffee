@@ -88,6 +88,7 @@ app.directive "roulette", ($window, $document, $swipe, $rootScope, imageLoader) 
 		iconsRatio: "@?"
 		snap: "=?"
 	link: (scope, element, attributes) ->
+		isGrabbed = false
 		angle = 0
 		origin = null
 		fontSize = scope.fontSize || 12
@@ -185,11 +186,13 @@ app.directive "roulette", ($window, $document, $swipe, $rootScope, imageLoader) 
 			destAngle = 2 * Math.PI if destAngle is 0 and angle > Math.PI
 			destAngle
 		snap = (section) ->
+			angle = makeAnglePositif angle
 			destAngle = getDestAngle section
-			progress = 0.05
+			progress = 0.1
 			sign = if destAngle > angle then 1 else -1
 			lastTime = 0
 			animloop = ->
+				return if isGrabbed
 				newTime = new Date().getTime()
 				timeElapsed = newTime - lastTime
 				if timeElapsed > 30
@@ -206,6 +209,7 @@ app.directive "roulette", ($window, $document, $swipe, $rootScope, imageLoader) 
 		# rotating
 		$swipe.bind angular.element(canvas),
 			'start': (coords) ->
+				isGrabbed = true
 				origin =
 					x: coords.x - (elOffset.left + radius)
 					y: coords.y - (elOffset.top + radius)
@@ -217,6 +221,7 @@ app.directive "roulette", ($window, $document, $swipe, $rootScope, imageLoader) 
 				rotateWheel ctx, wheelCanvas, angle + diff(origin, dest)
 
 			'end': (coords) ->
+				isGrabbed = false
 				dest =
 					x: coords.x - (elOffset.left + radius)
 					y: coords.y - (elOffset.top + radius)

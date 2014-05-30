@@ -264,6 +264,7 @@
           progress = 0.05;
           sign = destAngle > angle ? 1 : -1;
           lastTime = 0;
+          console.log(180 * angle / Math.PI, 180 * destAngle / Math.PI);
           animloop = function() {
             var newTime, timeElapsed;
             newTime = new Date().getTime();

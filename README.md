@@ -14,7 +14,7 @@ Copy the roulette.js and roulette.css file into your project and add the followi
 
 Alternatively, if you're using bower, you can add this to your component.json (or bower.json):
 
-		"angular-roulette": "~0.0.2"
+		"angular-roulette": "~0.0.3"
 
 Or simply run
 
